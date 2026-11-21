@@ -10,7 +10,8 @@ import webbrowser
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-DEFAULT_PORT = 8080
+DEFAULT_PORT = 9090          # TD webserver (8080 is taken by TD's CEF debugger)
+PORT_CANDIDATES = [9090, 8080]
 SETTINGS_FILE = 'vj_gui_settings.txt'
 
 
@@ -118,12 +119,15 @@ class Launcher(QtWidgets.QMainWindow):
         threading.Thread(target=self._check_thread, daemon=True).start()
 
     def _check_thread(self):
-        if is_alive(self.host, self.port):
-            QtCore.QMetaObject.invokeMethod(self, 'connect_ui',
-                                           QtCore.Qt.QueuedConnection)
-        else:
-            QtCore.QMetaObject.invokeMethod(self, 'show_fail',
-                                           QtCore.Qt.QueuedConnection)
+        # try the known ports in order; remember the one that answers
+        for port in PORT_CANDIDATES:
+            if is_alive(self.host, port):
+                self.port = port
+                QtCore.QMetaObject.invokeMethod(self, 'connect_ui',
+                                               QtCore.Qt.QueuedConnection)
+                return
+        QtCore.QMetaObject.invokeMethod(self, 'show_fail',
+                                       QtCore.Qt.QueuedConnection)
 
     @QtCore.Slot()
     def connect_ui(self):

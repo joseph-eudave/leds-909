@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>909 VJ — Concept B: DECK</title>
+<style>
+:root{--bg:#0c0e11;--panel:#15191f;--line:#272f38;--txt:#d7dee8;--dim:#7b8794;
+--acc:#ff5c72;--prog:#ffc248;--prev:#4aa3e8;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+/* transport */
+.transport{height:58px;background:#10141a;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:12px}
+.tb{padding:9px 18px;border:none;border-radius:7px;font-weight:800;letter-spacing:1px;cursor:pointer}
+.tb.white{background:#e8e8e8;color:#111}.tb.strobe{background:#7a2020;color:#fff}.tb.black{background:#000;color:#f66;border:1px solid #444}
+.xf{flex:1;display:flex;align-items:center;gap:14px;max-width:520px;margin:0 auto}
+.xf .side{width:70px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+.xf .a{background:#20303f;color:var(--prev);border:1px solid var(--prev)}
+.xf .b{background:#3f3320;color:var(--prog);border:1px solid var(--prog)}
+.slider{flex:1;height:34px;background:#0a0c0f;border-radius:17px;position:relative;border:1px solid var(--line)}
+.slider .fill{position:absolute;left:0;top:0;bottom:0;width:62%;background:linear-gradient(90deg,#2a6f9e,#a8802a);border-radius:17px 0 0 17px}
+.slider .knob{position:absolute;left:62%;top:-4px;bottom:-4px;width:10px;background:#eee;border-radius:4px;transform:translateX(-5px);box-shadow:0 0 8px #000}
+.tempo{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.beat{width:14px;height:14px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+.auto{padding:9px 16px;border-radius:7px;background:#2a1c22;color:var(--acc);border:1px solid var(--acc);font-weight:800}
+/* composition */
+.comp{flex:1;display:flex;flex-direction:column;padding:10px;gap:8px;min-height:0}
+.cols{display:flex;gap:6px;padding-left:210px}
+.coltrig{flex:1;max-width:110px;height:30px;border-radius:6px;background:#1c232c;border:1px solid var(--line);
+display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--dim);cursor:pointer}
+.coltrig.on{background:#31241a;color:var(--prog);border-color:var(--prog)}
+.layers{flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.layer{flex:1;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden;min-height:64px}
+.layer .name{width:200px;display:flex;align-items:center;gap:8px;padding:0 12px;border-right:1px solid var(--line);font-weight:700}
+.layer .name .ico{width:10px;height:10px;border-radius:3px}
+.layer .cells{flex:1;display:flex;gap:6px;padding:6px;overflow:hidden}
+.cell{flex:1;max-width:130px;border-radius:7px;position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;min-width:0}
+.cell .nm{position:absolute;left:0;right:0;bottom:0;font-size:9px;padding:2px 5px;background:rgba(0,0,0,.6);font-weight:600;white-space:nowrap;overflow:hidden}
+.cell.on{border-color:var(--prog);box-shadow:0 0 10px rgba(255,194,72,.45)}
+.cell.pre{border-color:var(--prev)}
+.layer .ctrl{width:150px;border-left:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 10px}
+.mini{width:26px;height:26px;border-radius:6px;background:#232b35;border:1px solid var(--line);font-size:10px;font-weight:800;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mini.s{color:var(--acc);border-color:var(--acc)}
+.vfader{width:8px;height:70%;background:#0a0c0f;border-radius:4px;position:relative}
+.vfader .k{position:absolute;left:-4px;width:16px;height:8px;background:#eee;border-radius:3px;top:25%}
+/* bottom pad deck */
+.deck{height:150px;background:#10141a;border-top:1px solid var(--line);display:flex;padding:10px;gap:12px}
+.pads{flex:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(2,1fr);gap:8px}
+.pad{border-radius:9px;position:relative;overflow:hidden;cursor:pointer;border:2px solid #2a323c}
+.pad .nm{position:absolute;left:0;right:0;bottom:0;font-size:9px;padding:2px 5px;background:rgba(0,0,0,.6);font-weight:700}
+.pad.glow{box-shadow:0 0 14px rgba(255,92,114,.35);border-color:var(--acc)}
+.saferow{grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.zones{width:220px;border-left:1px solid var(--line);padding-left:12px;display:flex;flex-direction:column;gap:6px}
+.zrow{display:flex;align-items:center;gap:8px;font-size:11px}
+.zrow .tag{width:64px;font-weight:700}
+.zrow .fillbar{flex:1;height:8px;background:#0a0c0f;border-radius:4px;overflow:hidden}
+.zrow .fillbar i{display:block;height:100%;background:linear-gradient(90deg,#39d98a,#7597de)}
+</style></head><body>
+<div class="transport">
+  <b style="letter-spacing:2px;color:var(--acc)">909</b>
+  <button class="tb white">WHITE</button><button class="tb strobe">STROBE ◼</button><button class="tb black">BLACK</button>
+  <div class="xf">
+    <div class="side a">A PREV</div>
+    <div class="slider"><div class="fill"></div><div class="knob"></div></div>
+    <div class="side b">B PROG</div>
+  </div>
+  <div class="tempo"><span class="beat"></span><b>158</b><span style="color:var(--dim)">BPM · TAP</span>
+    <span class="mini">½×</span><span class="mini">2×</span></div>
+  <button class="auto">AUTO</button>
+</div>
+<div class="comp">
+  <div class="cols"><div class="coltrig on">SUNSET</div><div class="coltrig">NIGHT</div><div class="coltrig">ACID</div><div class="coltrig">DARK</div><div class="coltrig">+ </div></div>
+  <div class="layers">
+    <div class="layer"><div class="name"><span class="ico" style="background:#ffc248"></span>Ceiling</div>
+      <div class="cells" id="l1"></div>
+      <div class="ctrl"><span class="mini s">S</span><span class="mini">B</span><div class="vfader"><div class="k"></div></div></div></div>
+    <div class="layer"><div class="name"><span class="ico" style="background:#4aa3e8"></span>Rejas L/R</div>
+      <div class="cells" id="l2"></div>
+      <div class="ctrl"><span class="mini">S</span><span class="mini">B</span><div class="vfader"><div class="k" style="top:10%"></div></div></div></div>
+    <div class="layer"><div class="name"><span class="ico" style="background:#39d98a"></span>Back Wall</div>
+      <div class="cells" id="l3"></div>
+      <div class="ctrl"><span class="mini">S</span><span class="mini s">B</span><div class="vfader"><div class="k" style="top:55%"></div></div></div></div>
+    <div class="layer"><div class="name"><span class="ico" style="background:#c46be8"></span>Text / Media</div>
+      <div class="cells" id="l4"></div>
+      <div class="ctrl"><span class="mini">S</span><span class="mini">B</span><div class="vfader"><div class="k" style="top:85%"></div></div></div></div>
+  </div>
+</div>
+<div class="deck">
+  <div class="pads" id="pads"></div>
+  <div class="zones">
+    <b style="font-size:10px;letter-spacing:2px;color:var(--dim)">ZONE GROUPS</b>
+    <div class="zrow"><span class="tag">ALL</span><div class="fillbar"><i style="width:100%"></i></div><span>100</span></div>
+    <div class="zrow"><span class="tag">REJAS</span><div class="fillbar"><i style="width:78%"></i></div><span>78</span></div>
+    <div class="zrow"><span class="tag">CEILING</span><div class="fillbar"><i style="width:60%"></i></div><span>60</span></div>
+    <div class="zrow"><span class="tag">BACK</span><div class="fillbar"><i style="width:45%"></i></div><span>45</span></div>
+    <div class="zrow"><span class="tag">SPEED ×1</span><div class="fillbar"><i style="width:50%"></i></div><span></span></div>
+  </div>
+</div>
+<script>
+const G=[['#e8533c','#f5d76e'],['#2b1055','#7597de'],['#0f9b8e','#39d98a'],['#7a1f6b','#e8703c'],['#141e30','#243b55']];
+function fill(id,names,preIdx){const el=document.getElementById(id);names.forEach((n,i)=>{const c=document.createElement('div');
+c.className='cell'+(i===0&&id==='l1'?' on':'')+(i===preIdx?' pre':'');
+c.innerHTML='<div style="position:absolute;inset:0;background:linear-gradient(120deg,'+G[i%5][0]+','+G[i%5][1]+')"></div><div class="nm">'+n+'</div>';
+el.appendChild(c);});}
+fill('l1',['Flujo','Aurora','Plasma','Caleidoscopio'],2);
+fill('l2',['Fuego','Estallido','Corte','Rebote'],0);
+fill('l3',['Lluvia','Marea','Titileo','Goteo'],1);
+fill('l4',['909 LOGO','NEXT:','DJ NAME','BANANA'],0);
+const pads=document.getElementById('pads');
+['LOOK 1','LOOK 2','LOOK 3','LOOK 4','LOOK 5','LOOK 6','LOOK 7','LOOK 8'].forEach((n,i)=>{
+const p=document.createElement('div');p.className='pad'+(i===2?' glow':'');
+p.innerHTML='<div style="position:absolute;inset:0;background:linear-gradient(135deg,'+G[i%5][0]+','+G[i%5][1]+');opacity:.85"></div><div class="nm">'+n+'</div>';
+pads.appendChild(p);});
+const sr=document.createElement('div');sr.className='saferow';sr.style.display='contents';
+['SAFE · Marea','SAFE · Aurora','SAFE · White','SAFE · Black'].forEach((n,i)=>{
+const p=document.createElement('div');p.className='pad';p.style.gridColumn='span 2';p.style.height='100%';
+p.innerHTML='<div style="position:absolute;inset:0;background:linear-gradient(135deg,'+G[i%5][1]+','+G[i%5][0]+');opacity:.6"></div><div class="nm">'+n+'</div>';
+sr.appendChild(p);});
+pads.appendChild(sr);
+</script></body></html>

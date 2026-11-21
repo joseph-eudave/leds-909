@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>leds 909 — VJ</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { background:#0a0a0e; color:#ccc; font-family: system-ui, sans-serif; margin:0; padding:12px; }
+  h1 { font-size:13px; margin:0 0 10px; color:#7f7; letter-spacing:3px; text-transform:uppercase; }
+
+  .layout { display:grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap:12px; }
+  .mon { min-width: 0; }
+  .mon .label { font-size:clamp(9px, 1.1vw, 11px); }
+  .pallet { grid-template-columns: repeat(auto-fill, minmax(clamp(76px, 9vw, 120px), 1fr)); }
+  .src-btn { font-size: clamp(10px, 1vw, 12px); padding: clamp(6px, 1.2vh, 10px) 6px; }
+
+  .mon { background:#111; border:1px solid #222; border-radius:6px; padding:8px; }
+  .mon .label { font-size:10px; letter-spacing:2px; color:#666; margin-bottom:4px; display:flex; justify-content:space-between; }
+  .mon .label b { color:#fff; }
+  .mon img { width:100%; aspect-ratio:16/9; background:#000; border-radius:3px; display:block; }
+  .mon .rtc { position:relative; overflow:hidden; aspect-ratio:16/9; background:#000; border-radius:3px; display:none; }
+  .rtc video { width:100%; height:100%; object-fit:contain; transform:scaleX(-1); }
+  #rtc_map_prog video, #rtc_map_prev video, #rtc_zone_map video { transform:none; }
+
+  .controls { margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+              background:#111; border:1px solid #222; border-radius:6px; padding:10px; }
+  #swap { background:#b22; border:1px solid #d44; color:#fff; font-size:16px; font-weight:bold;
+          padding:12px 36px; border-radius:5px; cursor:pointer; letter-spacing:2px; }
+  #swap:active { background:#d44; }
+  input[type=range] { width:180px; }
+  .tval { font-size:13px; color:#aaa; min-width:36px; }
+
+  .tabs { display:flex; gap:6px; margin:0 0 12px 0; }
+  .tab { background:#18181e; color:#888; border:1px solid #2a2a30; padding:8px 22px;
+         border-radius:5px 5px 0 0; cursor:pointer; font-size:12px; letter-spacing:2px; }
+  .tab.active { background:#0a0a0e; color:#7f7; border-bottom-color:#0a0a0e; }
+  .zctl { display:flex; align-items:center; gap:10px; background:#111; border:1px solid #222;
+          border-radius:6px; padding:10px; }
+  .zbtn { background:#282830; color:#fff; border:1px solid #3a3a44; border-radius:4px;
+          width:34px; height:34px; font-size:18px; cursor:pointer; }
+  .zcount { font-size:18px; color:#7f7; min-width:30px; text-align:center; }
+  .zsplit { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px;
+            background:#111; border:1px solid #222; border-radius:6px; padding:10px; }
+  .zsplit select, .zrow select { background:#18181e; color:#ccc; border:1px solid #2a2a30;
+            border-radius:4px; padding:6px; font-size:12px; }
+  .zgo { background:#1a3a2a; border:1px solid #2a6a3a; color:#7f7; border-radius:4px;
+         padding:8px 14px; cursor:pointer; font-size:12px; letter-spacing:1px; }
+  .zrow { display:flex; align-items:center; gap:8px; background:#111; border:1px solid #222;
+          border-radius:6px; padding:8px 10px; margin-top:6px; flex-wrap:wrap; }
+  .zrow .zname { color:#fd7; font-size:13px; min-width:52px; }
+  .zrow .zinfo { color:#555; font-size:11px; }
+  .zrow.selected { border-color:#8a6a2a; background:#221c10; }
+  .zrow .znum { width:56px; background:#18181e; color:#ccc; border:1px solid #2a2a30;
+                border-radius:4px; padding:4px; font-size:11px; }
+  .zrow .zl { color:#666; font-size:9px; margin-left:4px; }
+  .zrow .zgrp { display:flex; align-items:center; margin-left:8px; }
+  .pallet { margin-top:12px; display:grid; grid-template-columns:repeat(auto-fill, minmax(100px,1fr)); gap:6px; }
+  .src-btn { background:#18181e; color:#aaa; border:1px solid #2a2a30; padding:10px 8px;
+             border-radius:4px; cursor:pointer; text-align:center; font-size:12px;
+             transition: background .15s; user-select:none; }
+  .src-btn:hover { background:#22222a; border-color:#3a3a40; }
+  .src-btn.selected { background:#1a3a2a; border-color:#2a6a3a; color:#7f7; }
+  .src-btn.program { background:#3a1a1a; border-color:#6a2a2a; color:#d77; }
+  .src-btn.selected.program { background:#3a3020; border-color:#8a6a2a; color:#fd7; }
+  .src-btn .idx { display:block; font-size:9px; color:#444; margin-top:2px; }
+  .src-btn.ar { border-left:3px solid #a33; }
+  .src-btn.scene { border-left:3px solid #36a; }
+
+  .status { margin-top:12px; display:flex; gap:16px; font-size:11px; color:#555; flex-wrap:wrap; }
+  .status .dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:4px; }
+  .on .dot { background:#4c4; } .off .dot { background:#c44; }
+
+  .infobar { margin-top:12px; display:flex; gap:18px; align-items:center; flex-wrap:wrap;
+             background:#111; border:1px solid #222; border-radius:6px; padding:8px 14px;
+             font-size:12px; color:#888; }
+  .infobar b { color:#fd7; }
+  .beatdot { display:inline-block; width:14px; height:14px; border-radius:50%;
+             background:#331; margin-right:6px; transition: background .08s, box-shadow .08s; }
+  .beatdot.on { background:#fd7; box-shadow:0 0 12px #fd7; }
+  .beatdot.down { background:#f55; box-shadow:0 0 14px #f55; }
+  .meters { margin-top:12px; background:#111; border:1px solid #222; border-radius:6px; padding:10px;
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:8px; }
+  .meter .lbl { font-size:9px; color:#555; letter-spacing:1px; margin-bottom:2px; }
+  .meter .bar { height:6px; background:#1a1a20; border-radius:3px; overflow:hidden; }
+  .meter .fill { height:100%; background:#4a8; width:0%; transition: width .1s; }
+  .meter.kick .fill { background:#a44; }
+  .meter.hype .fill { background:#a84; }
+</style>
+</head>
+<body>
+<h1>LEDS 909 — VJ</h1>
+<div class="tabs">
+  <button class="tab active" data-tab="show">SHOW</button>
+  <button class="tab" data-tab="zones">ZONES</button>
+</div>
+<div id="tab-show">
+
+<div class="layout">
+  <div class="mon">
+    <div class="label"><span>PREVIEW</span><b id="prev_name">—</b></div>
+    <div class="rtc tr" id="rtc_mon_prev"><video muted autoplay playsinline></video></div><img id="mon_prev" alt="preview">
+  </div>
+  <div class="mon">
+    <div class="label"><span>PROGRAM</span><b id="prog_name">—</b></div>
+    <div class="rtc tl" id="rtc_mon_prog"><video muted autoplay playsinline></video></div><img id="mon_prog" alt="program">
+  </div>
+</div>
+
+<div class="layout" style="margin-top:12px">
+  <div class="mon">
+    <div class="label"><span>PREVIEW — VENUE MAP</span><b id="prev_name2">—</b></div>
+    <div class="rtc br" id="rtc_map_prev"><video muted autoplay playsinline></video></div><img id="map_prev" alt="preview map">
+  </div>
+  <div class="mon">
+    <div class="label"><span>PROGRAM — VENUE MAP</span><b id="prog_name2">—</b></div>
+    <div class="rtc bl" id="rtc_map_prog"><video muted autoplay playsinline></video></div><img id="map_prog" alt="program map">
+  </div>
+</div>
+
+<div class="pallet" id="pallet"></div>
+
+<div class="controls">
+  <button id="swap">SWAP</button>
+  <label style="font-size:12px;color:#888">fade
+    <input type="range" id="time" min="0" max="10" step="0.1" value="1.0">
+    <span class="tval" id="tval">1.0s</span>
+  </label>
+</div>
+
+<div class="meters" id="meters"></div>
+
+<div class="infobar">
+  <button id="mb_white" class="zbtn" style="background:#ccc;color:#111;font-weight:bold;min-width:52px">WHITE</button>
+  <button id="mb_strobe" class="zbtn" style="background:#7a2020;color:#fff;font-weight:bold;min-width:60px">STROBE</button>
+  <button id="mb_black" class="zbtn" style="background:#111;color:#f55;font-weight:bold;min-width:60px">BLACK</button>
+  <span><span class="beatdot" id="beatdot"></span><b id="ib_genre">—</b></span>
+  <span>BPM <b id="ib_bpm">—</b></span>
+  <span>BEAT <b id="ib_pos">—</b></span>
+  <span>BEATS <b id="ib_count">0</b></span>
+  <span>DOWNS <b id="ib_down">0</b></span>
+  <button id="ib_auto" class="zbtn" style="background:#333;font-weight:bold;letter-spacing:1px">AUTO</button>
+  <span id="auto_ctl" style="display:none;align-items:center;gap:4px">
+    <button id="ib_dw_m" class="zbtn" style="min-width:22px">−</button>
+    <span style="font-size:11px;color:#888">dwell</span>
+    <b id="ib_dwell" style="min-width:20px;text-align:center;color:#cfc">8</b>
+    <button id="ib_dw_p" class="zbtn" style="min-width:22px">+</button>
+  </span>
+  <span id="ib_auto_info" style="color:#7f7;font-size:11px"></span>
+</div>
+</div><!-- /tab-show -->
+
+<div id="tab-zones" style="display:none">
+  <div class="zctl" style="margin-top:12px">
+    <b style="font-size:12px;color:#7f7;letter-spacing:2px">ZONE COUNT</b>
+    <button id="z_minus" class="zbtn">−</button>
+    <span id="z_count" class="zcount">0</span>
+    <button id="z_plus" class="zbtn">+</button>
+  </div>
+  <div class="zsplit">
+    <b style="font-size:11px;color:#888">SPLIT TEXTURE:</b>
+    <select id="z_split_src"></select>
+    <select id="z_split_n">
+      <option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="6">6</option><option value="8">8</option>
+    </select>
+    <select id="z_split_m">
+      <option value="h">H strips</option>
+      <option value="v">V strips</option>
+      <option value="g">Grid</option>
+    </select>
+    <button id="z_split_go" class="zgo">APPLY</button>
+    <button id="z_clear" class="zgo" style="background:#422">CLEAR ALL</button>
+  </div>
+  <div class="layout" style="margin-top:10px">
+    <div class="mon">
+      <div class="label"><span>VENUE — ZONE VIEW</span><b id="z_sel_name">zone 1</b></div>
+      <div class="rtc bl" id="rtc_zone_map"><video muted autoplay playsinline></video></div>
+      <img id="zone_map" alt="zone map">
+    </div>
+    <div class="mon">
+      <div class="label"><span>ZONE TEXTURE</span><b id="z_tex_name">global</b></div>
+      <div class="rtc" id="rtc_zone_tex"><video muted autoplay playsinline></video></div>
+      <img id="zone_tex" alt="zone texture">
+    </div>
+  </div>
+  <div class="pallet" id="zone_pallet"></div>
+  <div id="zone_rows"></div>
+</div><!-- /tab-zones -->
+
+<div class="status" id="status_block">
+  <span id="st_ws" class="off"><span class="dot"></span>ws</span>
+  <span id="st_brain" class="off"><span class="dot"></span>jev</span>
+  <span id="st_info"></span>
+</div>
+
+<script>
+let SOURCES = [];
+let sel = 0;
+const ws = new WebSocket('ws://' + location.host);
+const $ = id => document.getElementById(id);
+
+ws.onopen = () => $('st_ws').className = 'on';
+ws.onclose = () => $('st_ws').className = 'off';
+ws.onmessage = (ev) => {
+  let m; try { m = JSON.parse(ev.data); } catch(e) { return; }
+  if (m.type === 'state') {
+    $('prog_name').textContent = (SOURCES[m.program] || {}).n ?? m.program;
+    $('prev_name').textContent = (SOURCES[m.preview] || {}).n ?? m.preview;
+    $('time').value = m.time;
+    $('tval').textContent = Number(m.time).toFixed(1) + 's';
+    sel = m.preview;
+    $('prog_name2').textContent = (SOURCES[m.program] || {}).n ?? m.program;
+    $('prev_name2').textContent = (SOURCES[m.preview] || {}).n ?? m.preview;
+    document.querySelectorAll('.src-btn').forEach((b, i) => {
+      b.classList.toggle('selected', i === m.preview);
+      b.classList.toggle('program', i === m.program);
+    });
+    if (m.brain_hb !== undefined) {
+      $('st_brain').className = m.brain_hb ? 'on' : 'off';
+    }
+    $('st_info').textContent = m.j_mood ? 'mood: ' + m.j_mood : '';
+    $('ib_genre').textContent = m.genre || '—';
+    $('ib_bpm').textContent = m.bpm || '—';
+    $('ib_count').textContent = m.beat || 0;
+    const ab = $('ib_auto');
+    const autoOn = !!m.auto;
+    ab.style.background = autoOn ? '#2a5a2a' : '#333';
+    ab.style.color = autoOn ? '#cfc' : '#888';
+    $('auto_ctl').style.display = autoOn ? 'inline-flex' : 'none';
+    $('ib_dwell').textContent = m.auto_dwell || 8;
+    $('ib_auto_info').textContent = autoOn ? (m.auto_info || '') : '';
+    // master override feedback (re-sync buttons with TD state)
+    if (typeof m.ovr !== 'undefined' && m.ovr !== true && !window._strobeOn && window._ovrMode !== 3) {
+      ovrStyle(0);
+    }
+  } else if (m.type === 'frame') {
+    if (m.p) $('mon_prog').src = m.p;
+    if (m.v) $('mon_prev').src = m.v;
+  } else if (m.type === 'map') {
+    if (m.p) $('map_prog').src = m.p;
+    if (m.v) $('map_prev').src = m.v;
+    if (m.p) $('zone_map').src = m.p;
+  } else if (m.type === 'ztex') {
+    if (m.v) $('zone_tex').src = m.v;
+  } else if (m.type === 'thumb') {
+    const b = pallet.querySelectorAll('.src-btn')[m.i];
+    if (b && m.d) {
+      b.style.backgroundImage = 'url(' + m.d + ')';
+      b.style.backgroundSize = 'cover';
+      b.style.backgroundPosition = 'center';
+      b.style.textShadow = '0 1px 3px #000, 0 0 6px #000';
+    }
+  } else if (m.type === 'sources') {
+    SOURCES = m.list || [];
+    buildPallet();
+    fillSplitSrc();
+  } else if (m.type === 'zones') {
+    ZONES = m.list || [];
+    if (selZone > ZONES.length) selZone = Math.max(1, ZONES.length);
+    buildZoneRows();
+    buildZonePallet();
+  } else if (m.type === 'bands') {
+    setMeter('bass', m.bass); setMeter('mid', m.mid); setMeter('high', m.high);
+    setMeter('hype', m.hype);
+    document.querySelector('.meter.kick .fill').style.width = m.trig ? '100%' : '0%';
+    if (m.bcount !== undefined) {
+      $('ib_pos').textContent = m.bpos;
+      $('ib_count').textContent = m.bcount;
+      $('ib_down').textContent = m.dcount;
+      $('ib_bpm').textContent = m.bpm || '—';
+      const dot = $('beatdot');
+      const isDown = window._lastD !== undefined && m.dcount > window._lastD;
+      window._lastD = m.dcount;
+      dot.className = 'beatdot on' + (isDown ? ' down' : '');
+      setTimeout(() => { dot.className = 'beatdot'; }, 120);
+    }
+  }
+};
+
+const pallet = $('pallet');
+function buildPallet() {
+  pallet.innerHTML = '';
+  SOURCES.forEach((s, i) => {
+    const b = document.createElement('div');
+    b.className = 'src-btn ' + s.t;
+    b.innerHTML = (s.n ?? i) + '<span class="idx">' + i + '</span>';
+    b.onclick = () => { sel = i; send({cmd:'preview', value:i}); };
+    pallet.appendChild(b);
+  });
+}
+
+const METERS = [
+  {id:'bass', lbl:'BASS'}, {id:'mid', lbl:'MID'}, {id:'high', lbl:'HIGH'},
+  {id:'hype', lbl:'HYPE'}, {id:'kick', lbl:'KICK'},
+];
+const metersDiv = $('meters');
+METERS.forEach(m => {
+  const d = document.createElement('div');
+  d.className = 'meter ' + m.id;
+  d.innerHTML = '<div class="lbl">' + m.lbl + '</div><div class="bar"><div class="fill"></div></div>';
+  metersDiv.appendChild(d);
+});
+function setMeter(id, v) {
+  const el = document.querySelector('.' + id + ' .fill');
+  if (el) el.style.width = Math.min(100, (v ?? 0) * 100) + '%';
+}
+
+$('swap').onclick = () => send({cmd:'swap', value:1});
+$('ib_auto').onclick = () => {
+  const on = $('ib_auto').style.background === 'rgb(42, 90, 42)';
+  send({cmd:'autovj', value: on ? 0 : 1});
+};
+$('ib_dw_m').onclick = () => {
+  const v = Math.max(1, (parseInt($('ib_dwell').textContent) || 8) - 2);
+  send({cmd:'autovj_dwell', value: v});
+};
+$('ib_dw_p').onclick = () => {
+  const v = (parseInt($('ib_dwell').textContent) || 8) + 2;
+  send({cmd:'autovj_dwell', value: v});
+};
+// master overrides: WHITE toggle, STROBE hold, BLACK toggle
+function ovrStyle(mode) {
+  window._ovrMode = mode;
+  $('mb_white').style.background = mode === 1 ? '#fff' : '#ccc';
+  $('mb_white').style.color = mode === 1 ? '#000' : '#111';
+  $('mb_black').style.background = mode === 2 ? '#5a1010' : '#111';
+  $('mb_black').style.color = mode === 2 ? '#faa' : '#f55';
+}
+$('mb_white').onclick = () => { const n = window._ovrMode === 1 ? 0 : 1; ovrStyle(n); send({cmd:'override', value:n}); };
+$('mb_strobe').onmousedown = () => { window._strobeOn = true; send({cmd:'override', value:3}); };
+$('mb_strobe').onmouseup = () => { window._strobeOn = false; send({cmd:'override', value:0}); };
+$('mb_strobe').onmouseleave = () => { if (window._strobeOn) { window._strobeOn = false; send({cmd:'override', value:0}); } };
+$('mb_black').onclick = () => { const n = window._ovrMode === 2 ? 0 : 2; ovrStyle(n); send({cmd:'override', value:n}); };
+$('time').oninput = (e) => {
+  $('tval').textContent = Number(e.target.value).toFixed(1) + 's';
+  send({cmd:'time', value: Number(e.target.value)});
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); send({cmd:'swap', value:1}); }
+  const n = parseInt(e.key);
+  if (!isNaN(n) && n >= 0 && n <= 9) send({cmd:'preview', value:n});
+  if (e.key === '-') send({cmd:'preview', value:10});
+  if (e.key === '=' || e.key === '+') send({cmd:'preview', value:11});
+});
+
+setInterval(() => send({cmd:'ping'}), 150);
+
+function send(o) { if (ws.readyState === 1) ws.send(JSON.stringify(o)); }
+
+// ---- WebRTC monitor stream (quadrants of one 960x540 wall) ----
+let pc = null, rtcConn = null, rtcOK = false, rtcTries = 0;
+function rtcStart() {
+  if (rtcOK || rtcTries >= 4) return;
+  rtcTries++;
+  try { pc = new RTCPeerConnection(); } catch(e) { return; }
+  pc.addTransceiver('video', {direction:'recvonly'});
+  const SLOT_EL = {
+    prog:  () => document.querySelector('#rtc_mon_prog video'),
+    prev:  () => document.querySelector('#rtc_mon_prev video'),
+    mprog: () => document.querySelector('#rtc_map_prog video'),
+    mprev: () => document.querySelector('#rtc_map_prev video'),
+  };
+  const used = new Set();
+  pc.ontrack = (ev) => {
+    rtcOK = true;
+    const tid = (ev.track.id || '') + ' ' + (ev.streams[0] ? ev.streams[0].id : '');
+    let slot = ['mprog','mprev','prog','prev'].find(s => tid.toLowerCase().includes(s));
+    if (!slot) slot = Object.keys(SLOT_EL).find(s => !used.has(s));
+    if (!slot) return;
+    used.add(slot);
+    let v = SLOT_EL[slot]();
+    if (!v) return;
+    v.srcObject = new MediaStream([ev.track]); v.play().catch(()=>{});
+    if (slot === 'mprog') {
+      const zv = document.querySelector('#rtc_zone_map video');
+      if (zv) { zv.srcObject = new MediaStream([ev.track]); zv.play().catch(()=>{}); }
+      const zm = zv && zv.closest('.rtc'), zi2 = zv && document.getElementById('zone_map');
+      if (zm && zi2) { zi2.style.display='none'; zm.style.display='block'; }
+    }
+    const mon = v.closest('.mon');
+    const img = mon && mon.querySelector('img'), rtc = v.closest('.rtc');
+    if (img && rtc) { img.style.display='none'; rtc.style.display='block'; }
+  };
+  pc.onicecandidate = (ev) => {
+    if (ev.candidate && rtcConn)
+      send({cmd:'webrtc_candidate', conn:rtcConn, candidate:ev.candidate.candidate,
+            lineIndex:ev.candidate.sdpMLineIndex, sdpMid:ev.candidate.sdpMid});
+  };
+  pc.onconnectionstatechange = () => {
+    if (['failed','disconnected','closed'].includes(pc.connectionState) && rtcOK) {
+      rtcOK = false;
+      document.querySelectorAll('.mon').forEach(m => {
+        const img = m.querySelector('img'), rtc = m.querySelector('.rtc');
+        if (img && rtc) { rtc.style.display='none'; img.style.display='block'; }
+      });
+      setTimeout(rtcStart, 1500);
+    }
+  };
+  send({cmd:'webrtc_connect'});
+  setTimeout(() => { if (!rtcOK) rtcStart(); }, 6000);
+}
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  document.getElementById('tab-show').style.display = t.dataset.tab === 'show' ? '' : 'none';
+  document.getElementById('tab-zones').style.display = t.dataset.tab === 'zones' ? '' : 'none';
+  if (t.dataset.tab === 'zones') send({cmd:'zones'});
+});
+
+// ---- zones ----
+let ZONES = [];
+let selZone = 1;
+function buildZoneRows() {
+  $('z_count').textContent = ZONES.length;
+  $('z_sel_name').textContent = 'zone ' + selZone;
+  const tex = ZONES[selZone - 1];
+  if (tex) $('z_tex_name').textContent = tex.src ? tex.n : 'global';
+  const rows = $('zone_rows');
+  rows.innerHTML = '';
+  ZONES.forEach(z => {
+    const d = document.createElement('div');
+    d.className = 'zrow' + (z.i === selZone ? ' selected' : '');
+    d.onclick = (e) => {
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+      selZone = z.i; buildZoneRows(); buildZonePallet(); send({cmd:'zone_tex_pick', value: z.i});
+    };
+    const opts = ['<option value="">global</option>'].concat(
+      SOURCES.map(s => '<option value="' + s.n + '"' + (s.n === z.n && z.src ? ' selected' : '') + '>' + s.n + '</option>')).join('');
+    const modes = [['','none'],['h','H strips'],['v','V strips'],['g','grid']].map(
+      m => '<option value="' + m[0] + '"' + (m[0] === z.m ? ' selected' : '') + '>' + m[1] + '</option>').join('');
+    d.innerHTML = '<span class="zname">zone ' + z.i + '</span>' +
+      '<select data-z="' + z.i + '" data-f="src">' + opts + '</select>' +
+      '<select data-z="' + z.i + '" data-f="m">' + modes + '</select>' +
+      '<select data-z="' + z.i + '" data-f="c">' + [0,2,3,4,6,8].map(
+        n => '<option value="' + n + '"' + (n === z.c ? ' selected' : '') + '>' + (n ? n + ' slices' : '—') + '</option>').join('') + '</select>' +
+      '<span class="zinfo">slice ' + z.x + '</span>' +
+      ['t','r','s'].map(f => '<span class="zgrp"><span class="zl">' + f.toUpperCase() + '</span>' +
+        [0,1,2].map(j => '<input class="znum" type="number" step="1" data-z="' + z.i + '" data-f="' + f + '" data-j="' + (j+1) + '" value="' + (z[f] ? Math.round(z[f][j]) : 0) + '">').join('') + '</span>').join('');
+    rows.appendChild(d);
+  });
+  rows.querySelectorAll('input.znum').forEach(inp => inp.onchange = () => {
+    send({cmd:'zone_xf', i: +inp.dataset.z, f: inp.dataset.f, j: +inp.dataset.j, value: +inp.value});
+  });
+  rows.querySelectorAll('select').forEach(sel => sel.onchange = () => {
+    const i = +sel.dataset.z, f = sel.dataset.f;
+    if (f === 'src') {
+      const s = SOURCES.find(s => s.n === sel.value);
+      send({cmd:'zone', i, src: s ? s.i : -1});
+    } else {
+      send({cmd:'zone', i, [f]: sel.value});
+    }
+  });
+}
+function buildZonePallet() {
+  const p = $('zone_pallet');
+  p.innerHTML = '';
+  SOURCES.forEach((s, i) => {
+    const b = document.createElement('div');
+    b.className = 'src-btn ' + s.t;
+    const z = ZONES[selZone - 1];
+    if (z && z.n === s.n && z.src) b.classList.add('selected');
+    b.innerHTML = s.n + '<span class="idx">→ zone ' + selZone + '</span>';
+    b.onclick = () => { send({cmd:'zone', i: selZone, src: s.i}); };
+    p.appendChild(b);
+  });
+}
+$('z_minus').onclick = () => send({cmd:'zone_count', value: ZONES.length - 1});
+$('z_plus').onclick = () => send({cmd:'zone_count', value: ZONES.length + 1});
+$('z_split_go').onclick = () => {
+  const s = SOURCES.find(x => x.n === $('z_split_src').value);
+  send({cmd:'zone_split', src: s ? s.i : 0, value: +$('z_split_n').value, m: $('z_split_m').value});
+};
+$('z_clear').onclick = () => send({cmd:'zone_split', src: -1, value: 0, m: ''});
+function fillSplitSrc() {
+  $('z_split_src').innerHTML = SOURCES.map(s => '<option>' + s.n + '</option>').join('');
+}
+
+ws.addEventListener('message', (ev) => {
+  let m; try { m = JSON.parse(ev.data); } catch(e) { return; }
+  if (m.type !== 'webrtc') return;
+  if (m.ev === 'offer' && pc) {
+    rtcConn = m.conn;
+    pc.setRemoteDescription({type:'offer', sdp:m.sdp}).then(() =>
+      pc.createAnswer()).then(ans => {
+      pc.setLocalDescription(ans);
+      send({cmd:'webrtc_answer', conn:rtcConn, sdp:ans.sdp});
+    }).catch(()=>{});
+  } else if (m.ev === 'candidate' && pc) {
+    pc.addIceCandidate({candidate:m.candidate, sdpMid:m.sdpMid,
+                        sdpMLineIndex:m.lineIndex}).catch(()=>{});
+  }
+});
+setTimeout(rtcStart, 800);
+</script>
+</body>
+</html>

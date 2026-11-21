@@ -1,0 +1,87 @@
+
+import json
+
+def build_all(defs_json):
+    M = op('/project1/mediaSwitcher')
+    sc = M.op('scenes')
+    defs = json.loads(defs_json)
+    made = []
+    for d in defs['progs']:
+        made.append(build_one(sc, d))
+    return made
+
+def build_one(sc, d):
+    M = op('/project1/mediaSwitcher')
+    name = 'fx_' + d['id']
+    b = sc.op(name)
+    if b is not None:
+        b.destroy()
+    b = sc.create(baseCOMP, name)
+    b.nodeX = -1200
+    b.nodeY = 1600
+    sh = b.create(textDAT, 'fx_glsl')
+    sh.text = d['glsl']
+    g = b.create(glslTOP, 'fx')
+    g.par.outputresolution.val = 'custom'
+    g.par.resolutionw.val = 512
+    g.par.resolutionh.val = 288
+    g.par.resmult.val = False
+    g.par.format.val = 'rgba8fixed'
+    g.par.pixeldat.val = sh.path
+    o1 = b.create(nullTOP, 'out1')
+    o1.inputConnectors[0].connect(g)
+
+    pg = b.appendCustomPage('FX')
+    def apar(nm, label, dflt, mn, mx):
+        nm = nm.capitalize()
+        pg.appendPar(nm, label=label)
+        p = b.par[nm]
+        p.default = dflt; p.min = mn; p.max = mx
+        p.normMin = mn; p.normMax = mx
+        p.clampMin = True; p.clampMax = True
+        p.val = dflt
+    for (nm, label, dflt, mn, mx) in d['params']:
+        apar(nm, label, dflt, mn, mx)
+    ca, cb = d['colA'], d['colB']
+    for i, c in enumerate('RGB'):
+        apar('Cola' + c.lower(), 'Color A ' + c, ca[i], 0.0, 1.0)
+    for i, c in enumerate('RGB'):
+        apar('Colb' + c.lower(), 'Color B ' + c, cb[i], 0.0, 1.0)
+
+    B = b.path
+    vecs = []
+    for (nm, label, dflt, mn, mx) in d['params']:
+        vecs.append(('u' + nm.capitalize(), "op('" + B + "').par." + nm.capitalize()))
+    # colors: two vec3 uniforms, components expression-bound
+    vecs.append(('uColA', None))   # handled specially
+    vecs.append(('uColB', None))
+    ctx = ['uFxTime', 'uBeat', 'uBeatPhase', 'uBpm', 'uPulsosS', 'uBass', 'uMid', 'uHigh']
+    names = [v[0] for v in vecs] + ctx
+    total = len(names)
+    try:
+        g.par.vec.val = total
+    except Exception:
+        pass
+    g.cook(force=True)
+    idx = 0
+    for (uname, expr) in vecs:
+        if uname == 'uColA':
+            comps = ['Colar', 'Colag', 'Colab']
+        elif uname == 'uColB':
+            comps = ['Colbr', 'Colbg', 'Colbb']
+        else:
+            comps = None
+        g.par['vec%dname' % idx].val = uname
+        if comps:
+            for ci, cn in enumerate(comps):
+                g.par['vec%dvalue%s' % (idx, 'xyz'[ci])].expr = "op('" + B + "').par." + cn.capitalize()
+        else:
+            g.par['vec%dvaluex' % idx].expr = expr
+        idx += 1
+    for cn in ctx:
+        g.par['vec%dname' % idx].val = cn
+        g.par['vec%dvaluex' % idx].val = 0.0
+        idx += 1
+    b.store('fx_ctx', dict(zip(ctx, [len(vecs) + i for i in range(8)])))
+    b.store('fx_def', d)
+    return name

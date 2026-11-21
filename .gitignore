@@ -1,0 +1,19 @@
+# build artifacts / regenerated locally
+vj_gui/VJ_GUI.exe
+
+# caches, logs, runtime state
+__pycache__/
+*.pyc
+TDImportCache/
+*.log
+*.pid
+svc_*.jpg
+
+# numbered TD autosave backups (main .toe is tracked)
+Leds 909.*.toe
+
+# large archived assets (see README: download links / optional)
+jev/archive_rave/models_rave/
+
+# local backups
+Backup/

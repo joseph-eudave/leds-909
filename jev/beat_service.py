@@ -382,12 +382,18 @@ def _open_loopback():
         spk = default_out
     cap_sr = int(spk['defaultSampleRate'])
 
+    # WASAPI loopback devices are often stereo-only: opening them mono gives
+    # paInvalidDevice (-9996). Open the native channel count and downmix.
+    ch = int(spk.get('maxInputChannels', 0)) or 2
+
     def cb(in_data, frame_count, time_info, status):
         y = np.frombuffer(in_data, dtype=np.int16).astype(np.float32) / 32768.0
+        if ch > 1:
+            y = y.reshape(-1, ch).mean(axis=1)
         feed_22050(_resample_to_22050(y, cap_sr))
         return (None, pyaudio.paContinue)
 
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=cap_sr, input=True,
+    stream = p.open(format=pyaudio.paInt16, channels=ch, rate=cap_sr, input=True,
                     input_device_index=spk['index'],
                     frames_per_buffer=int(cap_sr * 0.02),
                     stream_callback=cb)

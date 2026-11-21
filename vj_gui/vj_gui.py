@@ -10,8 +10,8 @@ import webbrowser
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-DEFAULT_PORT = 9090          # TD webserver (8080 is taken by TD's CEF debugger)
-PORT_CANDIDATES = [9090, 8080]
+DEFAULT_PORT = 6060          # TD webserver (was 9090; 9090 is taken by the 909club venue node server on the show PC)
+PORT_CANDIDATES = [6060, 9090, 8080]
 SETTINGS_FILE = 'vj_gui_settings.txt'
 
 

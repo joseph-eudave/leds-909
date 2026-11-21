@@ -444,14 +444,18 @@ async function handleOffer(m){
     const pc=new RTCPeerConnection({iceServers:[]});
     pcs[m.conn]=pc;
     pc.ontrack=ev=>{
-      rtcGotVideo=true;
+      /* only take over from the jpeg fallback once the track actually
+         delivers frames — a dead encoder track must not black out the
+         monitors (seen with the NVENC streams disabled, 2026-11) */
       const map={prog:'rtc_prog',prev:'rtc_prev',mprog:'rtc_mprog',mprev:'rtc_mprev',grid:'rtc_grid'};
       const id=map[ev.track.id];  // TD labels tracks exactly
       if(id){
         const v=document.getElementById(id);
         v.srcObject=ev.streams[0];
-        refreshMonitorView();
-        if(ev.track.id==='grid')startGridSlicer();
+        const promote=()=>{rtcGotVideo=true;refreshMonitorView();
+          if(ev.track.id==='grid')startGridSlicer();};
+        if(v.readyState>=2)promote(); else v.addEventListener('loadeddata',promote,{once:true});
+        setTimeout(()=>{if(v.readyState<2)v.removeEventListener('loadeddata',promote);},3000);
       }
     };
     pc.onicecandidate=ev=>{

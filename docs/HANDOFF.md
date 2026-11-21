@@ -402,3 +402,8 @@ Working implementation (atlas routing):
 - RESTORE_TODAY.py (leds909/) re-applies everything RAM-side after a
 - crash/reopen: RAVE removal, port 9090, grid track tuple, thumb_grid
   recreated fresh, fx_clock hook, service restart. RUN IT then SAVE.
+- RESTORE_TODAY run + project SAVED as Leds 909.118.toe (main toe updated).
+  layoutTOP wiring: setInputs() is UNRELIABLE (0 connections, 128x128);
+  the reliable path is the tops par EXPRESSION listing op() refs —
+  grid now 1080x608 with 34 sources. RESTORE_TODAY.py + fx_clock hook
+  updated to the expression method.

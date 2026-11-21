@@ -13,6 +13,40 @@
 # hung/crashed TD on 2026-11-20. Create the node fresh and setInputs once.
 import base64, json
 
+CB = """# beat_send - stream TD audio to beat_service.py (UDP 7010).
+# Module-global socket cache (never operator storage - sockets cannot be
+# pickled into the .toe).
+import socket
+import struct as _st
+
+PORT = 7010
+_sock = [None]
+
+
+def onCook(scriptOp):
+    scriptOp.clear()
+    A = parent()
+    if _sock[0] is None:
+        _sock[0] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = _sock[0]
+    src = scriptOp.inputs[0] if scriptOp.inputs else None
+    if src is not None and src.numSamples:
+        ch = src.chan(0)
+        if ch is not None:
+            n = src.numSamples
+            buf = bytearray(4 * n)
+            for i in range(n):
+                v = ch[i]
+                v = 0.0 if v is None else float(v)
+                buf[4*i:4*i+4] = _st.pack('<f', v)
+            try:
+                s.sendto(bytes(buf), ('127.0.0.1', PORT))
+                A.store('beat_sent', A.fetch('beat_sent', 0) + n)
+            except Exception:
+                pass
+    return
+"""
+
 SCRIPT = r'''
 import base64, time
 
@@ -118,7 +152,9 @@ g.par.outputresolution.val = 'custom'
 g.par.resolutionw.val = 1080
 g.par.resolutionh.val = 608
 g.par.resmult.val = False
-g.setInputs(srcs)
+# setInputs on layoutTOP is unreliable — wire via tops EXPRESSION
+expr = '[' + ','.join("op('" + p + "')" for p in rows if op(p) is not None) + ']'
+g.par.tops.expr = expr
 g.nodeX = 1300; g.nodeY = 900
 
 if M.op('vso_grid') is None:
@@ -140,7 +176,7 @@ if 'thumb_grid' not in ct:
             M.store('grid_n', nsrc)
             tg = M.op('thumb_grid')
             if tg is not None:
-                tg.setInputs([op(p) for p in rows if op(p) is not None])
+                tg.par.tops.expr = '[' + ','.join("op('" + p + "')" for p in rows if op(p) is not None) + ']'
     except Exception:
         pass
 """

@@ -188,6 +188,8 @@ const ws=new WebSocket('ws://'+location.host);
 const send=o=>{try{ws.send(JSON.stringify(o));}catch(e){}};
 ws.onopen=()=>$('st_ws').className='on';
 ws.onclose=()=>$('st_ws').className='off';
+ws.onopen=()=>{send({cmd:'viewset',which:'prev',mode:viewMode.prev});
+               send({cmd:'viewset',which:'prog',mode:viewMode.prog});};
 ws.onmessage=ev=>{
   let m;try{m=JSON.parse(ev.data);}catch(e){return;}
   if(m.type==='state'){
@@ -215,7 +217,8 @@ ws.onmessage=ev=>{
     }
     if(typeof m.ovr!=='undefined'&&!m.ovr&&!window._strobeOn){window._ovrMode=0;paintOvr();}
   }else if(m.type==='frame'){
-    if(m.p&&!rtcGotVideo)$('mon_prog').src=m.p; if(m.v&&!rtcGotVideo)$('mon_prev').src=m.v;
+    if(m.p&&!rtcGotVideo&&viewMode.prog==='scene')$('mon_prog').src=m.p;
+    if(m.v&&!rtcGotVideo&&viewMode.prev==='scene')$('mon_prev').src=m.v;
   }else if(m.type==='map'){
     if(m.p&&!rtcGotVideo&&viewMode.prog==='venue')$('mon_prog').src=m.p;
     if(m.v&&!rtcGotVideo&&viewMode.prev==='venue')$('mon_prev').src=m.v;
@@ -471,6 +474,7 @@ async function handleOffer(m){
 const viewMode={prev:'venue',prog:'venue'};
 function setView(which,mode){
   viewMode[which]=mode;
+  send({cmd:'viewset',which,mode});   /* server skips dead encodes */
   document.getElementById('vt_'+which+'_scene').classList.toggle('on',mode==='scene');
   document.getElementById('vt_'+which+'_map').classList.toggle('on',mode==='venue');
   refreshMonitorView();

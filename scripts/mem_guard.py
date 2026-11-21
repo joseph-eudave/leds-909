@@ -24,6 +24,8 @@ except ImportError:
 LIMIT_GB = float(sys.argv[1]) if len(sys.argv) > 1 else 12.0
 SAMPLE_S = 5.0
 WINDOW = 12          # samples (~1 min): used for the doubling test
+GRACE_S = 240.0      # ignore growth during project load (TD builds its whole
+                     # operator graph on open; 1.3->2.7 GB there is normal)
 LOG = None
 
 
@@ -41,6 +43,7 @@ def main():
     LOG = os.path.join(tempfile.gettempdir(), "leds909_mem_watch.log")
     log("mem_guard start: limit=%.1f GB window=%d samples" % (LIMIT_GB, WINDOW))
     seen = False
+    start_t = None
     hist = []  # (t, gb)
     while True:
         procs = [p for p in psutil.process_iter(["name"]) if p.info["name"] and p.info["name"].lower() == "touchdesigner.exe"]
@@ -50,7 +53,8 @@ def main():
                 return 0
             time.sleep(SAMPLE_S)
             continue
-        seen = True
+        if start_t is None:
+            start_t = time.time()
         try:
             commit = sum(p.memory_info().vms for p in procs) / 2**30
         except psutil.Error:
@@ -62,6 +66,8 @@ def main():
         kill = None
         if commit > LIMIT_GB:
             kill = "commit %.2f GB over limit %.1f GB" % (commit, LIMIT_GB)
+        elif now - start_t < GRACE_S:
+            pass  # startup: operator graph construction grows commit legally
         elif len(hist) >= 6:
             old_t, old_g = hist[0]
             if old_g > 0.3 and commit > 2.0 * old_g:

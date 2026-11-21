@@ -93,7 +93,9 @@ border:1px dashed rgba(57,217,138,.35);border-radius:8px;padding:6px;height:64px
   <button class="mbtn black" id="mb_black">BLACK</button>
   <div class="spacer"></div>
   <div class="bpmbox"><span class="beatdot" id="beatdot"></span><b id="ib_bpm">—</b><span style="color:var(--dim)">BPM</span>
-    <span style="color:#444">|</span><span id="ib_genre" style="color:var(--acc)">—</span></div>
+    <span style="color:#444">|</span><span id="ib_genre" style="color:var(--acc)">—</span>
+    <span style="color:#444">|</span><span style="color:var(--dim)">A</span><input type="color" id="pal_a" title="Color A (global)" style="width:26px;height:20px;padding:0;border:1px solid var(--line);background:none;vertical-align:middle;cursor:pointer">
+    <span style="color:var(--dim)">B</span><input type="color" id="pal_b" title="Color B (global)" style="width:26px;height:20px;padding:0;border:1px solid var(--line);background:none;vertical-align:middle;cursor:pointer"></div>
   <div class="autobox">
     <button class="autobtn" id="ab_auto">AUTO</button>
     <button class="mbtn2" id="am_slow" style="flex:none;padding:8px 10px">SLOW</button>
@@ -188,6 +190,10 @@ const ws=new WebSocket('ws://'+location.host);
 const send=o=>{try{ws.send(JSON.stringify(o));}catch(e){}};
 ws.onopen=()=>$('st_ws').className='on';
 ws.onclose=()=>$('st_ws').className='off';
+['a','b'].forEach(k=>{
+  const el=document.getElementById('pal_'+k);
+  el.addEventListener('input',()=>send({cmd:'palette',a:document.getElementById('pal_a').value,b:document.getElementById('pal_b').value}));
+});
 ws.onopen=()=>{send({cmd:'viewset',which:'prev',mode:viewMode.prev});
                send({cmd:'viewset',which:'prog',mode:viewMode.prog});};
 ws.onmessage=ev=>{
@@ -196,6 +202,8 @@ ws.onmessage=ev=>{
     $('prog_name').textContent=(SOURCES[m.program]||{}).n??m.program;
     $('prev_name').textContent=(SOURCES[m.preview]||{}).n??m.preview;
     $('ib_bpm').textContent=m.bpm||'—';
+    if(m.colA)document.getElementById('pal_a').value=m.colA;
+    if(m.colB)document.getElementById('pal_b').value=m.colB;
     $('ib_genre').textContent=m.genre||'—';
     $('time').value=m.time;$('tval').textContent=Number(m.time).toFixed(1)+'s';
     $('st_brain').className=(m.brain_hb||m.bhb)?'on':'off';
@@ -225,6 +233,9 @@ ws.onmessage=ev=>{
   }else if(m.type==='thumb'){
     const b=document.querySelectorAll('#pallet .clip')[m.i];
     if(b&&m.d)b.style.backgroundImage='url('+m.d+')';
+  }else if(m.type==='palette'){
+    if(m.a)document.getElementById('pal_a').value=m.a;
+    if(m.b)document.getElementById('pal_b').value=m.b;
   }else if(m.type==='grid'){
     /* one jpeg contains every scene; slice it into the clips with CSS
        background percentages (no per-scene decode, no extra requests) */

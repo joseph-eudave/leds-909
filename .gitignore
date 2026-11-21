@@ -27,3 +27,7 @@ Leds 909.toe.bkp*
 dist/
 vj_gui/build/
 vj_gui/VJ_GUI.spec
+
+# TD crash artifacts
+*.dmp
+CrashAutoSave.*

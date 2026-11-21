@@ -44,6 +44,7 @@ def main():
     log("mem_guard start: limit=%.1f GB window=%d samples" % (LIMIT_GB, WINDOW))
     seen = False
     start_t = None
+    tracked_pids = ()
     hist = []  # (t, gb)
     while True:
         procs = [p for p in psutil.process_iter(["name"]) if p.info["name"] and p.info["name"].lower() == "touchdesigner.exe"]
@@ -53,6 +54,14 @@ def main():
                 return 0
             time.sleep(SAMPLE_S)
             continue
+        pids = tuple(sorted(p.pid for p in procs))
+        if pids != tracked_pids:
+            # a NEW TD session (different pid set): restart grace + history,
+            # otherwise the load spike of the new process reads as doubling
+            log("mem_guard: TD session %s (was %s) - grace reset" % (pids, tracked_pids))
+            tracked_pids = pids
+            start_t = time.time()
+            hist = []
         if start_t is None:
             start_t = time.time()
         try:

@@ -28,7 +28,10 @@ sys.path.insert(0, str(HERE))
 
 CMD_PORT = 7003
 ANSWER_PORT = 7005  # audio_jev oscin1 (TD-side handler)
-HOT = Path('C:/Users/josep/AppData/Local/Temp/jev_hot')
+import os as _os
+HOT = Path(_os.environ.get('LOCALAPPDATA', _os.environ.get('TEMP', '.'))) / 'Temp' / 'jev_hot'
+# legacy tap dir (author machine) still watched for compatibility
+HOT_DIRS = [HOT, Path('C:/Users/josep/AppData/Local/Temp/jev_hot')]
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -127,7 +130,8 @@ def _jam_analyze(y):
     mel = _mel_patches(y)
     if mel is None:
         return None
-    emb, gact = _jam['e'].run(None, {'melspectrogram': mel})
+    emb = _jam['e'].run(['embeddings'], {'melspectrogram': mel})[0]
+    gact = _jam['e'].run(['activations'], {'melspectrogram': mel})[0]
     act = _jam['h'].run(None, {'embeddings': emb})[0].mean(axis=0)
     top = np.argsort(act)[::-1][:3]
     gtop = np.argsort(gact.mean(axis=0))[::-1][:2]
@@ -152,7 +156,11 @@ def main():
             pass
         hb += 1
         osc_send(out, '/jevbrain/heartbeat', float(hb))
-        wavs = sorted(HOT.glob('*.wav'), key=lambda p: p.stat().st_mtime)
+        wavs = []
+        for d in HOT_DIRS:
+            if d.is_dir():
+                wavs.extend(sorted(d.glob('*.wav'), key=lambda p: p.stat().st_mtime))
+        wavs.sort(key=lambda p: p.stat().st_mtime)
         for w in wavs[-1:]:
             if w.name in analyzed:
                 continue
@@ -163,7 +171,7 @@ def main():
             try:
                 import numpy as np
                 with wave.open(str(w), 'rb') as f:
-                    raw = f.readframes(f.get_nframes())
+                    raw = f.readframes(f.getnframes())
                 y = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
                 t0 = time.time()
                 jr = _jam_analyze(y)

@@ -17,3 +17,13 @@ jev/archive_rave/models_rave/
 
 # local backups
 Backup/
+
+# toe expand/collapse working dirs and local backups (regenerated locally)
+Leds 909.toe.dir/
+Leds 909.toe.toc
+Leds 909.toe.bkp*
+
+# pyinstaller / gui build artifacts
+dist/
+vj_gui/build/
+vj_gui/VJ_GUI.spec

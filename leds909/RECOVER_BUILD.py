@@ -1,3 +1,7 @@
+import os as _os, tempfile as _tf
+TEMP = _tf.gettempdir().replace(chr(92), '/')
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 # LED 909 master recovery — rebuilds everything not stored in the .toe.
 # Run this python file, then POST C:/Users/josep/AppData/Local/Temp/recover_all.json
 # to the TD exec bridge (or re-run via: python RECOVER_BUILD.py && curl ...).
@@ -6,7 +10,7 @@
 # ui_stream auto field. Requires leds909/fx909/programs.json on disk.
 import base64, json
 
-FXDIR = 'C:/Users/josep/OneDrive/Escritorio/leds 909/leds909/fx909'
+FXDIR = _os.path.join(ROOT, 'leds909', 'fx909')
 
 CLOCK = '''
 def fx_tick():
@@ -87,8 +91,8 @@ def fx_thumbs():
         return
     tt.inputConnectors[0].connect(src)
     try:
-        tt.save('C:/Users/josep/AppData/Local/Temp/msw_thumb.jpg')
-        with open('C:/Users/josep/AppData/Local/Temp/msw_thumb.jpg', 'rb') as f:
+        tt.save(TEMP + '/msw_thumb.jpg')
+        with open(TEMP + '/msw_thumb.jpg', 'rb') as f:
             d = 'data:image/jpeg;base64,' + _b.b64encode(f.read()).decode()
     except Exception:
         return
@@ -114,7 +118,7 @@ SVC = """
 # services launcher: starts/stops external python sidecars in leds 909
 import subprocess, os, time
 
-BASE = 'C:/Users/josep/OneDrive/Escritorio/leds 909'
+BASE = ROOT
 SCRIPTS = ['jev/beat_service.py', 'jev/brain_service.py']
 
 def _pid_file(s):
@@ -134,7 +138,8 @@ def _running(s):
 
 def _python_exe():
     import sys, os
-    cands = ['C:/Users/josep/AppData/Local/Programs/Python/Python312/python.exe',
+    cands = [_os.path.join(_os.environ.get('LOCALAPPDATA',''), 'Programs', 'Python', 'Python312', 'python.exe'),
+         'python',
              'C:/Python312/python.exe']
     for c in cands:
         if os.path.exists(c):
@@ -314,7 +319,7 @@ AV_EXEC = ("def onFrameStart(dat):\n"
 HTTP_CB_LOCAL = r'''
 import re, sys
 p = FXDIR.replace('fx909', '')  # not used; kept for clarity
-t = open(r'C:/Users/josep/AppData/Local/Temp/http_cb_now.txt', newline='').read()
+t = open(TEMP + '/http_cb_now.txt', newline='').read()
 # strip any previous autovj/auto remnants
 t = re.sub(r"\tif cmd == 'autovj':\n(\t+.*\n)+", '', t)
 t = t.replace("\t\t'auto': (op('/project1/auto_vj') is not None and op('/project1/auto_vj').par.Enabled.eval() > 0.5),", '')
@@ -338,18 +343,18 @@ mark = "\t\t'bhb': (absTime.seconds - A.fetch('beat_hb_t', -1e9)) < 5.0,"
 assert mark in t, 'bhb anchor missing'
 t = t.replace(mark, mark + "\n\t\t'auto': (op('/project1/auto_vj') is not None and op('/project1/auto_vj').par.Enabled.eval() > 0.5),\n\t\t'auto_info': str(M.fetch('av_reason', '')),", 1)
 compile(t, 'h', 'exec')
-open(r'C:/Users/josep/AppData/Local/Temp/http_cb_fixed.txt', 'w', newline='').write(t)
+open(TEMP + '/http_cb_fixed.txt', 'w', newline='').write(t)
 print('http_cb patched locally')
 '''
 
 UI_LOCAL = r'''
-t = open(r'C:/Users/josep/AppData/Local/Temp/ui_stream_now.txt', newline='').read()
+t = open(TEMP + '/ui_stream_now.txt', newline='').read()
 if "'auto':" not in t:
     mark = "\t\t'bhb': (absTime.seconds - A.fetch('beat_hb_t', -1e9)) < 5.0,"
     assert mark in t, 'bhb anchor missing in ui_stream'
     t = t.replace(mark, mark + "\n\t\t'auto': (op('/project1/auto_vj') is not None and op('/project1/auto_vj').par.Enabled.eval() > 0.5),\n\t\t'auto_info': str(M.fetch('av_reason', '')),", 1)
 compile(t, 'u', 'exec')
-open(r'C:/Users/josep/AppData/Local/Temp/ui_stream_fixed.txt', 'w', newline='').write(t)
+open(TEMP + '/ui_stream_fixed.txt', 'w', newline='').write(t)
 print('ui_stream patched locally')
 '''
 
@@ -437,8 +442,8 @@ script = ("import base64, json\n"
           "ar=AV.create(tableDAT,'auto_rules'); ar.text=base64.b64decode('%s').decode()\n"
           "ae=AV.create(executeDAT,'auto_exec'); ae.text=base64.b64decode('%s').decode(); ae.par.framestart.val=True\n"
           # export + note for local http_cb/ui patching (done by caller)
-          "open(r'C:/Users/josep/AppData/Local/Temp/http_cb_now.txt','w',newline='').write(M.op('http_cb').text)\n"
-          "open(r'C:/Users/josep/AppData/Local/Temp/ui_stream_now.txt','w',newline='').write(M.op('ui_stream').text)\n"
+          "open(TEMP + '/http_cb_now.txt','w',newline='').write(M.op('http_cb').text)\n"
+          "open(TEMP + '/ui_stream_now.txt','w',newline='').write(M.op('ui_stream').text)\n"
           "exec(compile(op('/project1/services/services_svc').text,'s','exec'),{'op':op})\n"
           "print('recovered. scenes:', len(made), 'services:', op('/project1/services/services_svc').module.start_all())"
           % (base64.b64encode(SVC.encode()).decode(),
@@ -452,7 +457,7 @@ script = ("import base64, json\n"
              base64.b64encode(AV_RULES.encode()).decode(),
              base64.b64encode(AV_EXEC.encode()).decode()))
 
-json.dump({"script": script}, open(r'C:/Users/josep/AppData/Local/Temp/recover_all.json', 'w'))
-open(r'C:/Users/josep/AppData/Local/Temp/http_local.py', 'w').write(HTTP_CB_LOCAL)
-open(r'C:/Users/josep/AppData/Local/Temp/ui_local.py', 'w').write(UI_LOCAL)
+json.dump({"script": script}, open(TEMP + '/recover_all.json', 'w'))
+open(TEMP + '/http_local.py', 'w').write(HTTP_CB_LOCAL)
+open(TEMP + '/ui_local.py', 'w').write(UI_LOCAL)
 print('recover payload ready')

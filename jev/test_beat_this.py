@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os as _os
 """test_beat_this.py — offline accuracy test of CPJKU beat_this on local tracks.
 
 For each track: detect beats/downbeats, derive BPM from median inter-beat
@@ -33,10 +34,10 @@ def analyze(path, checkpoint='final0'):
 if __name__ == '__main__':
     ckpt = sys.argv[1] if len(sys.argv) > 1 else 'final0'
     tracks = [
-        r'C:/Users/josep/Music/Hardcore/Crash The Party.mp3',
+        _os.path.join(_os.path.expanduser('~'), 'Music', 'Crash The Party.mp3'),
     ]
     import glob, os
-    extra = glob.glob(r'C:/Users/josep/Music/Hardcore/*.mp3')[:3]
+    extra = glob.glob(_os.path.join(_os.path.expanduser('~'), 'Music', '*.mp3'))[:3]
     for t in extra:
         if t not in tracks and os.path.exists(t):
             tracks.append(t)

@@ -1,3 +1,4 @@
+import os as _os
 import json
 
 PREAMBLE = '''#define TAU 6.28318530718
@@ -234,5 +235,5 @@ def shader_for(p):
 out = dict(progs=[dict(id=p['id'], name=p['name'], colA=list(p['colA']), colB=list(p['colB']),
                        params=[list(x) for x in p['params']] + [['arlevel', 'Audio React', 0.0, 0.0, 1.0]],
                        glsl=shader_for(p)) for p in PROGS])
-json.dump(out, open('C:\\Users\\josep\\OneDrive\\Escritorio\\leds 909\\leds909\\fx909\\programs.json', 'w'))
+json.dump(out, open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'programs.json'), 'w'))
 print('programs:', len(PROGS))

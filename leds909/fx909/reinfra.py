@@ -1,3 +1,7 @@
+import os as _os, tempfile as _tf
+TEMP = _tf.gettempdir().replace(chr(92), '/')
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import base64, json
 
 CLOCK = '''
@@ -81,8 +85,8 @@ def fx_thumbs():
         return
     tt.inputConnectors[0].connect(src)
     try:
-        tt.save('C:/Users/josep/AppData/Local/Temp/msw_thumb.jpg')
-        with open('C:/Users/josep/AppData/Local/Temp/msw_thumb.jpg', 'rb') as f:
+        tt.save(TEMP + '/msw_thumb.jpg')
+        with open(TEMP + '/msw_thumb.jpg', 'rb') as f:
             d = 'data:image/jpeg;base64,' + _b.b64encode(f.read()).decode()
     except Exception:
         return
@@ -158,5 +162,5 @@ script = ("import base64\n"
              base64.b64encode(WATCH.encode()).decode(),
              base64.b64encode(HOLD.encode()).decode()))
 
-json.dump({"script": script}, open(r'C:/Users/josep/AppData/Local/Temp/reinfra.json', 'w'))
+json.dump({"script": script}, open(TEMP + '/reinfra.json', 'w'))
 print('ok')

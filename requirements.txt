@@ -1,14 +1,19 @@
 # leds 909 — Python 3.12 (64-bit, Windows)
 # Audio analysis + GUI sidecars. Install: pip install -r requirements.txt
 # NOTE: numpy is pinned by acids-rave/scipy compat (1.26.x) — BeatNet shim included.
+# NOTE: madmom must be compiled on Windows (Cython extensions): install
+#       "MSVC Build Tools 2022" (C++ workload) first. The pip sdist's default
+#       branch 'master' is gone — use the git 'main' branch below.
+# NOTE: BeatNet on PyPI (1.0.0) pins numba==0.54.1 (no py3.12 wheels) —
+#       install from the GitHub fork instead.
 
 numpy==1.26.4
 scipy<1.13
 torch>=2.2            # CPU wheels are enough (BeatNet + RAVE-archived)
-BeatNet==1.0.0        # beat/downbeat tracking (pip name: beatnet-torch or install from GitHub mjhydri/BeatNet)
+BeatNet @ git+https://github.com/mjhydri/BeatNet
+madmom @ git+https://github.com/CPJKU/madmom@main
 pyaudiowpatch>=0.2.12 # WASAPI loopback fallback
-essentia              # genre/mood (jamendo models) — see docs/HANDOFF.md for model files
-madmom @ git+https://github.com/CPJKU/madmom@master  # py3.12 compat (used offline by brain_service)
+onnxruntime            # genre/mood ONNX models (jev/models/jamendo) — replaces essentia
 flask
 Pillow
 requests

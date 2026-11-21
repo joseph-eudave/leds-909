@@ -1,6 +1,10 @@
+import os as _os, tempfile as _tf
+TEMP = _tf.gettempdir().replace(chr(92), '/')
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import base64, json
 
-BASE = 'C:/Users/josep/OneDrive/Escritorio/leds 909'
+BASE = ROOT
 
 SVC = """
 # services launcher: starts/stops external python sidecars in leds 909
@@ -125,5 +129,5 @@ script = ("import base64\n"
              base64.b64encode(EXT.encode()).decode(),
              base64.b64encode(INIT.encode()).decode()))
 
-json.dump({"script": script}, open(r'C:\Users\josep\AppData\Local\Temp\svc4.json', 'w'))
+json.dump({"script": script}, open(_os.path.join(_tf.gettempdir(), 'svc4.json'), 'w'))
 print('payload ok')

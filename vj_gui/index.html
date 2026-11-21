@@ -222,6 +222,21 @@ ws.onmessage=ev=>{
   }else if(m.type==='thumb'){
     const b=document.querySelectorAll('#pallet .clip')[m.i];
     if(b&&m.d)b.style.backgroundImage='url('+m.d+')';
+  }else if(m.type==='grid'){
+    /* one jpeg contains every scene; slice it into the clips with CSS
+       background percentages (no per-scene decode, no extra requests) */
+    const img=new Image();
+    img.onload=()=>{
+      document.querySelectorAll('#pallet .clip').forEach(b=>{
+        const i=+b.dataset.i; if(isNaN(i))return;
+        const c=i%m.cols, r=Math.floor(i/m.cols);
+        b.style.backgroundImage='url('+m.d+')';
+        b.style.backgroundSize=(m.cols*100)+'% '+(m.rows*100)+'%';
+        b.style.backgroundPosition=(m.cols>1?c*100/(m.cols-1):0)+'% '+(m.rows>1?r*100/(m.rows-1):0)+'%';
+        b.style.backgroundRepeat='no-repeat';
+      });
+    };
+    img.src=m.d;
   }else if(m.type==='sources'){
     SOURCES=m.list||[];buildPallet();fillZoneSelects();
     if(propSel>=0)requestPars(propSel);
@@ -449,7 +464,7 @@ async function handleOffer(m){
   }catch(e){console.warn('rtc',e);}
 }
 /* scene/venue view toggles */
-const viewMode={prev:'scene',prog:'scene'};
+const viewMode={prev:'venue',prog:'venue'};
 function setView(which,mode){
   viewMode[which]=mode;
   document.getElementById('vt_'+which+'_scene').classList.toggle('on',mode==='scene');

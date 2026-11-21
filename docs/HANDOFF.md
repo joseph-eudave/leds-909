@@ -407,3 +407,8 @@ Working implementation (atlas routing):
   the reliable path is the tops par EXPRESSION listing op() refs —
   grid now 1080x608 with 34 sources. RESTORE_TODAY.py + fx_clock hook
   updated to the expression method.
+
+## Cleanup (2026-11-20)
+- Deleted obsolete one-day scripts RESTORE_TODAY.py and REMOVE_RAVE.py (their
+  changes are saved in the .toe; the reusable restore is RECOVER_BUILD.py,
+  and the layoutTOP tops-expression lesson is documented above).

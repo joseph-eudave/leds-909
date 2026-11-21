@@ -56,7 +56,7 @@ cd vj_gui && build_vj_exe.bat
 | `jev/archive_rave/` | Archived RAVE experiment (not in the live pipeline; model .ts excluded from git — see below) |
 | `leds909/fx909/` | **Scene generator**: `programs.json` (18 scene defs + GLSL), `defgen.py`, `builder.py`, uniform binder, recovery scripts |
 | `leds909/wled_fx/` | WLED Fire 2012 port (first WLED experiment) |
-| `leds909/RECOVER_BUILD.py`, `RESTORE_TODAY.py`, `REMOVE_RAVE.py` | One-shot TD-side restores after crashes/reopens |
+| `leds909/RECOVER_BUILD.py` | One-shot TD-side scene/infra restore after a rollback |
 | `vj_gui/index.html` | The CONSOLE web app (app itself — served by TD) |
 | `vj_gui/design/` | The three layout mockups that were evaluated |
 | `docs/HANDOFF.md` | **Living engineering log**: every quirk, decision, recovery procedure — read this first when anything breaks |
@@ -94,7 +94,7 @@ recommended pattern — no Python in the frame loop). After rebuilding scenes,
 1. Open TD → open the console → press **AUTO** (or drive manually).
 2. Blackout/white are TD-side overrides — they work even if the browser dies.
 3. After ANY change made via the API/bridge: **save the .toe** (Ctrl+S).
-   Crashes/reopens may need `leds909/RESTORE_TODAY.py` — check HANDOFF.
+   After a rollback/reopen, `leds909/RECOVER_BUILD.py` rebuilds scenes + infra — check HANDOFF.
 
 ## License / credits
 
